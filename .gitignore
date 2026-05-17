@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+config.py
+pizza_map.html
+pizza_karte.html
+pizza_duesseldorf.html
+pizza_map_denhaag.html
+pizza_map_duesseldorf.html
+pizza_map_koeln.html
+*.jpg
+*.jpeg
+*.png
+.env

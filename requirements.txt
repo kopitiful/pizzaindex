@@ -1,0 +1,10 @@
+httpx[http2]>=0.27
+beautifulsoup4>=4.12
+lxml>=5.0
+pdfplumber>=0.11
+pytesseract>=0.3.10
+Pillow>=10.0
+anthropic>=0.28
+tqdm>=4.66
+aiofiles>=23.0
+tenacity>=8.2
