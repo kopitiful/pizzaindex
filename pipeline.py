@@ -651,13 +651,20 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
     ], key=lambda x: x["avg"])
     city_stats_json = json.dumps(city_stats, ensure_ascii=False)
 
-    if len(_cities_shown) > 1:
-        intro_hint = ("Tippe eine Stadt: "
-                      + ", ".join(_cities_shown[:-1]) + " oder " + _cities_shown[-1])
-        intro_placeholder = "z.B. " + ", ".join(_cities_shown[:2]) + " …"
-    else:
-        intro_hint = "Welche Stadt möchtest du erkunden?"
-        intro_placeholder = "Stadtname eingeben …"
+    _cheapest = min(data, key=lambda d: d["price"])
+    _priciest = max(data, key=lambda d: d["price"])
+    _cheapest_city = next(
+        (v[0][0] for k, v in CITY_BBOXES.items() if _norm_city(k) == _cheapest["city_key"]), ""
+    )
+    _priciest_city = next(
+        (v[0][0] for k, v in CITY_BBOXES.items() if _norm_city(k) == _priciest["city_key"]), ""
+    )
+    stat_cheapest = f"{_cheapest['price']:.2f} € · {_cheapest['name']}" + (f", {_cheapest_city}" if _cheapest_city else "")
+    stat_priciest = f"{_priciest['price']:.2f} € · {_priciest['name']}" + (f", {_priciest_city}" if _priciest_city else "")
+    total_count = len(data)
+
+    intro_hint = "Stadt eingeben"
+    intro_placeholder = "Stadtname …"
 
     # Map initialisation
     if multi_city:
@@ -749,6 +756,33 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
   display: flex; flex-direction: column; align-items: center;
   gap: 10px; width: 100%;
 }}
+.intro-desc {{
+  color: rgba(220,190,130,.60);
+  font-size: clamp(.72rem,1.3vw,.84rem);
+  text-align: center; line-height: 1.5;
+  margin: -4px 0 4px;
+}}
+.intro-stats {{
+  width: 100%; display: flex; flex-direction: column; gap: 5px;
+  border-top: 1px solid rgba(220,175,90,.15);
+  border-bottom: 1px solid rgba(220,175,90,.15);
+  padding: 10px 0;
+}}
+.intro-stat {{
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 10px;
+}}
+.stat-label {{
+  color: rgba(220,175,90,.55);
+  font-size: clamp(.6rem,1.1vw,.72rem);
+  letter-spacing: .12em; text-transform: uppercase;
+  white-space: nowrap; flex-shrink: 0;
+}}
+.stat-val {{
+  color: rgba(255,240,210,.75);
+  font-size: clamp(.68rem,1.2vw,.78rem);
+  text-align: right;
+}}
 .intro-hint {{
   color: rgba(220,190,130,.55);
   font-size: clamp(.7rem,1.4vw,.86rem);
@@ -794,8 +828,13 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
   </div>
   <div id="intro-stage">
     <div class="intro-panel" id="intro-panel">
-      <p class="intro-eyebrow">Preisvergleich &middot; 10 Städte</p>
+      <p class="intro-eyebrow">Preisvergleich</p>
       <p class="intro-title">Pizza<br><em>Margherita</em></p>
+      <p class="intro-desc">Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.</p>
+      <div class="intro-stats">
+        <div class="intro-stat"><span class="stat-label">Günstigste</span><span class="stat-val">{stat_cheapest}</span></div>
+        <div class="intro-stat"><span class="stat-label">Teuerste</span><span class="stat-val">{stat_priciest}</span></div>
+      </div>
       <div class="intro-ui">
         <p class="intro-hint">{intro_hint}</p>
         <div class="input-wrap">
