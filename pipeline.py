@@ -812,7 +812,14 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
 .input-error {{
   color: #ff8a7a; font-size: .78rem;
   letter-spacing: .04em; min-height: 1.1em; text-align: center;
-}}"""
+}}
+.intro-browse-btn {{
+  background: transparent; border: none; outline: none; cursor: pointer;
+  color: rgba(220,175,90,.45); font-size: clamp(.65rem,1.1vw,.75rem);
+  letter-spacing: .1em; text-transform: uppercase; padding: 4px 0;
+  transition: color .2s;
+}}
+.intro-browse-btn:hover {{ color: rgba(220,175,90,.85); }}"""
 
     intro_html = f"""
 <div id="intro">
@@ -831,10 +838,6 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
       <p class="intro-eyebrow">Preisvergleich</p>
       <p class="intro-title">Pizza<br><em>Margherita</em></p>
       <p class="intro-desc">Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.</p>
-      <div class="intro-stats">
-        <div class="intro-stat"><span class="stat-label">Günstigste</span><span class="stat-val">{stat_cheapest}</span></div>
-        <div class="intro-stat"><span class="stat-label">Teuerste</span><span class="stat-val">{stat_priciest}</span></div>
-      </div>
       <div class="intro-ui">
         <p class="intro-hint">{intro_hint}</p>
         <div class="input-wrap">
@@ -843,6 +846,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
           <span class="input-arrow">→</span>
         </div>
         <p class="input-error" id="input-error"></p>
+        <button class="intro-browse-btn" id="browse-btn">Alle Städte anzeigen</button>
       </div>
     </div>
   </div>
@@ -860,30 +864,40 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
     ['s-n','fly-n',0],  ['s-ne','fly-ne',40], ['s-e','fly-e',80],  ['s-se','fly-se',120],
     ['s-s','fly-s',160],['s-sw','fly-sw',120],['s-w','fly-w',80],  ['s-nw','fly-nw',40]
   ];
+  var ALL_BOUNDS = {json.dumps(_bounds) if multi_city else 'null'};
   var input = document.getElementById('city-input');
   var error = document.getElementById('input-error');
   var intro = document.getElementById('intro');
   var panel = document.getElementById('intro-panel');
   if (!input) return;
-  function doFly(key) {{
-    var b = CITY_BOUNDS[key];
-    // Fade out the UI panel immediately
+  function _animateOut(cb) {{
     if (panel) {{ panel.style.transition = 'opacity 0.35s'; panel.style.opacity = '0'; }}
-    // Stagger the 8 pizza slice fly animations
     SLICES.forEach(function(s) {{
       setTimeout(function() {{
         var el = document.getElementById(s[0]);
         if (el) el.classList.add(s[1]);
       }}, s[2]);
     }});
-    // After slices finish flying, remove intro and navigate
-    setTimeout(function() {{
+    setTimeout(cb, 1100);
+  }}
+  function doFly(key) {{
+    var b = CITY_BOUNDS[key];
+    _animateOut(function() {{
       intro.remove();
       if (b) {{ map.flyToBounds([[b[0],b[1]],[b[2],b[3]]], {{padding:[30,30]}}); }}
       else   {{ map.invalidateSize(); }}
       filterCity(key);
-    }}, 1100);
+    }});
   }}
+  function doFlyAll() {{
+    _animateOut(function() {{
+      intro.remove();
+      if (ALL_BOUNDS) {{ map.fitBounds(ALL_BOUNDS, {{padding:[20,20]}}); }}
+      else {{ map.invalidateSize(); }}
+    }});
+  }}
+  var browseBtn = document.getElementById('browse-btn');
+  if (browseBtn) browseBtn.addEventListener('click', doFlyAll);
   input.addEventListener('keydown', function(e) {{
     if (e.key !== 'Enter') return;
     var key = norm(input.value.trim());
