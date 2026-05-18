@@ -905,6 +905,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
 <meta charset="utf-8">
 <title>Pizza Margherita – {display_title}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍕</text></svg>">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -947,6 +948,46 @@ td.rating {{ font-size: .8em; white-space: nowrap; }}
   background: rgba(255,255,255,.12); color: #fff; cursor: pointer; vertical-align: middle;
 }}
 #stats-btn:hover {{ background: rgba(255,255,255,.25); }}
+#top10-btn {{
+  font-size: .72em; margin-left: 6px; padding: 2px 7px;
+  border: 1px solid rgba(255,255,255,.35); border-radius: 4px;
+  background: rgba(255,255,255,.12); color: #fff; cursor: pointer; vertical-align: middle;
+}}
+#top10-btn:hover {{ background: rgba(255,255,255,.25); }}
+/* Custom map pins */
+.pin-cheap {{
+  background: #22a855; color: #fff; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg); width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.45);
+}}
+.pin-cheap-inner {{ transform: rotate(45deg); }}
+.pin-pricey {{
+  background: #d63031; color: #fff; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg); width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.45);
+}}
+.pin-pricey-inner {{ transform: rotate(45deg); }}
+/* Top-10 panel */
+#top10-panel {{ border-bottom: 2px solid #e8d5b0; background: #fff8f0; }}
+.top10-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 0; }}
+.top10-col {{ padding: 6px 8px; }}
+.top10-col h4 {{ font-size: .7em; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; padding: 3px 0 5px; border-bottom: 1px solid #eee; margin-bottom: 4px; }}
+.top10-col.cheap h4 {{ color: #22a855; }}
+.top10-col.pricey h4 {{ color: #d63031; }}
+.top10-item {{ display: flex; align-items: baseline; gap: 4px; padding: 2px 2px;
+  cursor: pointer; border-radius: 3px; }}
+.top10-item:hover {{ background: #fff3cd; }}
+.t10-rank {{ font-size: .68em; color: #aaa; width: 14px; flex-shrink: 0; text-align: right; }}
+.t10-name {{ font-size: .74em; color: #333; flex: 1; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }}
+.t10-price {{ font-size: .74em; font-weight: 700; white-space: nowrap; }}
+.top10-col.cheap .t10-price {{ color: #22a855; }}
+.top10-col.pricey .t10-price {{ color: #d63031; }}
 {intro_css}
 </style>
 </head>
@@ -956,9 +997,10 @@ td.rating {{ font-size: .8em; white-space: nowrap; }}
 <div id="sidebar">
   <div id="sidebar-header">
     <h2>🍕 Pizza Margherita — {display_title}</h2>
-    <p><span id="sidebar-count">{len(data)}</span> Pizzerien · sortiert nach Preis <button id="stats-btn" onclick="toggleStats()">📊 Städtevergleich</button></p>
+    <p><span id="sidebar-count">{len(data)}</span> Pizzerien · sortiert nach Preis <button id="stats-btn" onclick="toggleStats()">📊 Städtevergleich</button><button id="top10-btn" onclick="toggleTop10()">🏆 Top 10</button></p>
   </div>
   <div id="city-stats" style="display:none"></div>
+  <div id="top10-panel" style="display:none"></div>
   <table>
     <thead>
       <tr>
@@ -983,11 +1025,67 @@ var hasRatings = {'true' if has_ratings else 'false'};
 var markers = [];
 var activeRow = null;
 
+var cheapMap = {{}};
+var priceyMap = {{}};
+var _n = data.length;
+for (var _ci = 0; _ci < Math.min(10, _n); _ci++) {{
+  cheapMap[_ci] = _ci + 1;
+}}
+for (var _pi = 0; _pi < Math.min(10, _n); _pi++) {{
+  var _pidx = _n - 1 - _pi;
+  if (!(_pidx in cheapMap)) priceyMap[_pidx] = _pi + 1;
+}}
+function makePinIcon(rank, cls) {{
+  return L.divIcon({{
+    className: '',
+    html: '<div class="' + cls + '"><span class="' + cls + '-inner">' + rank + '</span></div>',
+    iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -28]
+  }});
+}}
 data.forEach(function(d, i) {{
-    var m = L.marker([d.lat, d.lon]).addTo(map);
+    var m;
+    if (i in cheapMap) {{
+        m = L.marker([d.lat, d.lon], {{ icon: makePinIcon(cheapMap[i], 'pin-cheap'), zIndexOffset: 200 }}).addTo(map);
+    }} else if (i in priceyMap) {{
+        m = L.marker([d.lat, d.lon], {{ icon: makePinIcon(priceyMap[i], 'pin-pricey'), zIndexOffset: 100 }}).addTo(map);
+    }} else {{
+        m = L.marker([d.lat, d.lon]).addTo(map);
+    }}
     m.bindPopup(d.popup);
     markers.push(m);
 }});
+(function() {{
+  var panel = document.getElementById('top10-panel');
+  if (!panel) return;
+  var cheapHtml = '';
+  for (var _ci2 = 0; _ci2 < Math.min(10, data.length); _ci2++) {{
+    var d = data[_ci2];
+    cheapHtml += '<div class="top10-item" data-idx="' + _ci2 + '">'
+      + '<span class="t10-rank">' + (_ci2 + 1) + '</span>'
+      + '<span class="t10-name" title="' + d.name + '">' + d.name + '</span>'
+      + '<span class="t10-price">' + d.price_str + '</span></div>';
+  }}
+  var priceyHtml = '';
+  for (var _pi2 = 0; _pi2 < Math.min(10, data.length); _pi2++) {{
+    var _idx2 = data.length - 1 - _pi2;
+    var d2 = data[_idx2];
+    priceyHtml += '<div class="top10-item" data-idx="' + _idx2 + '">'
+      + '<span class="t10-rank">' + (_pi2 + 1) + '</span>'
+      + '<span class="t10-name" title="' + d2.name + '">' + d2.name + '</span>'
+      + '<span class="t10-price">' + d2.price_str + '</span></div>';
+  }}
+  panel.innerHTML = '<div class="top10-grid">'
+    + '<div class="top10-col cheap"><h4>💚 Top 10 Günstigste</h4>' + cheapHtml + '</div>'
+    + '<div class="top10-col pricey"><h4>🔴 Top 10 Teuerste</h4>' + priceyHtml + '</div>'
+    + '</div>';
+  panel.querySelectorAll('.top10-item').forEach(function(el) {{
+    el.addEventListener('click', function() {{
+      var idx = parseInt(this.dataset.idx);
+      markers[idx].openPopup();
+      map.panTo(markers[idx].getLatLng());
+    }});
+  }});
+}})();
 
 var tbody = document.getElementById('tbl');
 data.forEach(function(d, i) {{
@@ -1043,6 +1141,10 @@ function filterCity(key) {{
 }}
 function toggleStats() {{
   var el = document.getElementById('city-stats');
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}}
+function toggleTop10() {{
+  var el = document.getElementById('top10-panel');
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }}
 function filterAndGo(key) {{
