@@ -666,6 +666,55 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
     intro_hint = "Stadt eingeben"
     intro_placeholder = "Stadtname …"
 
+    _i18n = {
+        "de": {
+            "eyebrow": "Preisvergleich",
+            "desc": "Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.",
+            "hint": "Stadt eingeben", "placeholder": "Stadtname …",
+            "browse": "Alle Städte anzeigen",
+            "error": "× Unbekannte Stadt – versuch es noch mal",
+            "countSuffix": "Pizzerien · sortiert nach Preis",
+            "btnStats": "\U0001f4ca Städtevergleich", "btnTop10": "\U0001f3c6 Top 10",
+            "thRestaurant": "Restaurant", "thPrice": "Preis",
+            "thDistrict": "Stadtteil", "thRating": "Bewertung",
+            "statsCity": "Stadt", "statsAvg": "Ø Preis", "statsMedian": "Median",
+            "statsMin": "Min", "statsMax": "Max",
+            "top10Cheap": "\U0001f49a Top 10 Günstigste",
+            "top10Pricey": "\U0001f534 Top 10 Teuerste",
+        },
+        "en": {
+            "eyebrow": "Price comparison",
+            "desc": "What does a Margherita cost in your city? Real prices, straight from the menus.",
+            "hint": "Enter a city", "placeholder": "City name …",
+            "browse": "Browse all cities",
+            "error": "× Unknown city – try again",
+            "countSuffix": "pizzerias · sorted by price",
+            "btnStats": "\U0001f4ca City comparison", "btnTop10": "\U0001f3c6 Top 10",
+            "thRestaurant": "Restaurant", "thPrice": "Price",
+            "thDistrict": "District", "thRating": "Rating",
+            "statsCity": "City", "statsAvg": "Avg price", "statsMedian": "Median",
+            "statsMin": "Min", "statsMax": "Max",
+            "top10Cheap": "\U0001f49a Top 10 Cheapest",
+            "top10Pricey": "\U0001f534 Top 10 Most Expensive",
+        },
+        "nl": {
+            "eyebrow": "Prijsvergelijking",
+            "desc": "Wat kost een Margherita in jouw stad? Echte prijzen, rechtstreeks van de menukaarten.",
+            "hint": "Stad invoeren", "placeholder": "Stadsnaam …",
+            "browse": "Alle steden bekijken",
+            "error": "× Onbekende stad – probeer opnieuw",
+            "countSuffix": "pizzeria’s · gesorteerd op prijs",
+            "btnStats": "\U0001f4ca Stadsoverzicht", "btnTop10": "\U0001f3c6 Top 10",
+            "thRestaurant": "Restaurant", "thPrice": "Prijs",
+            "thDistrict": "Wijk", "thRating": "Beoordeling",
+            "statsCity": "Stad", "statsAvg": "Gem. prijs", "statsMedian": "Mediaan",
+            "statsMin": "Min", "statsMax": "Max",
+            "top10Cheap": "\U0001f49a Top 10 Goedkoopste",
+            "top10Pricey": "\U0001f534 Top 10 Duurste",
+        },
+    }
+    i18n_json = json.dumps(_i18n, ensure_ascii=False)
+
     # Map initialisation
     if multi_city:
         _lats = [d["lat"] for d in data]
@@ -835,13 +884,18 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
   </div>
   <div id="intro-stage">
     <div class="intro-panel" id="intro-panel">
-      <p class="intro-eyebrow">Preisvergleich</p>
+      <div id="lang-sw-intro">
+        <button class="lang-btn active" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <p class="intro-eyebrow" id="intro-eyebrow">Preisvergleich</p>
       <p class="intro-title">Pizza<br><em>Margherita</em></p>
-      <p class="intro-desc">Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.</p>
+      <p class="intro-desc" id="intro-desc">Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.</p>
       <div class="intro-ui">
-        <p class="intro-hint">{intro_hint}</p>
+        <p class="intro-hint" id="intro-hint">Stadt eingeben</p>
         <div class="input-wrap">
-          <input type="text" id="city-input" placeholder="{intro_placeholder}"
+          <input type="text" id="city-input" placeholder="Stadtname …"
                  autocomplete="off" spellcheck="false"/>
           <span class="input-arrow">→</span>
         </div>
@@ -906,7 +960,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
       error.textContent = '';
       doFly(singleCity ? norm(singleCity) : key);
     }} else {{
-      error.textContent = '× Unbekannte Stadt – versuch es noch mal';
+      error.textContent = i18n[currentLang].error;
       input.select();
     }}
   }});
@@ -968,6 +1022,26 @@ td.rating {{ font-size: .8em; white-space: nowrap; }}
   background: rgba(255,255,255,.12); color: #fff; cursor: pointer; vertical-align: middle;
 }}
 #top10-btn:hover {{ background: rgba(255,255,255,.25); }}
+.lang-sw {{ display: inline-flex; gap: 3px; margin-left: 8px; vertical-align: middle; }}
+.lang-btn {{
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  border-radius: 3px; color: rgba(255,255,255,.5); font-size: .65em;
+  padding: 1px 5px; cursor: pointer; transition: all .15s; font-family: inherit;
+}}
+.lang-btn:hover {{ background: rgba(255,255,255,.22); color: #fff; }}
+.lang-btn.active {{ background: rgba(255,255,255,.28); color: #fff;
+  border-color: rgba(255,255,255,.55); font-weight: 700; }}
+#lang-sw-intro {{
+  position: absolute; top: 14px; right: 18px; display: flex; gap: 5px; z-index: 3;
+  pointer-events: auto;
+}}
+#lang-sw-intro .lang-btn {{
+  background: rgba(8,5,3,.5); border: 1px solid rgba(220,175,90,.25);
+  color: rgba(220,175,90,.45); font-size: .68em; padding: 2px 6px;
+}}
+#lang-sw-intro .lang-btn:hover {{ color: rgba(220,175,90,.9); border-color: rgba(220,175,90,.6); }}
+#lang-sw-intro .lang-btn.active {{ color: rgba(220,175,90,.95);
+  border-color: rgba(220,175,90,.7); font-weight: 700; }}
 /* Custom map pins */
 .pin-cheap {{
   background: #22a855; color: #fff; border-radius: 50% 50% 50% 0;
@@ -1011,7 +1085,7 @@ td.rating {{ font-size: .8em; white-space: nowrap; }}
 <div id="sidebar">
   <div id="sidebar-header">
     <h2>🍕 Pizza Margherita — {display_title}</h2>
-    <p><span id="sidebar-count">{len(data)}</span> Pizzerien · sortiert nach Preis <button id="stats-btn" onclick="toggleStats()">📊 Städtevergleich</button><button id="top10-btn" onclick="toggleTop10()">🏆 Top 10</button></p>
+    <p><span id="sidebar-count">{len(data)}</span> <span id="count-suffix">Pizzerien · sortiert nach Preis</span> <button id="stats-btn" onclick="toggleStats()">📊 Städtevergleich</button><button id="top10-btn" onclick="toggleTop10()">🏆 Top 10</button><span class="lang-sw"><button class="lang-btn active" data-lang="de">DE</button><button class="lang-btn" data-lang="en">EN</button><button class="lang-btn" data-lang="nl">NL</button></span></p>
   </div>
   <div id="city-stats" style="display:none"></div>
   <div id="top10-panel" style="display:none"></div>
@@ -1019,10 +1093,10 @@ td.rating {{ font-size: .8em; white-space: nowrap; }}
     <thead>
       <tr>
         <th class="rank">#</th>
-        <th>Restaurant</th>
-        <th class="preis">Preis</th>
-        <th>Stadtteil</th>
-        {'<th>Bewertung</th>' if has_ratings else ''}
+        <th id="th-restaurant">Restaurant</th>
+        <th class="preis" id="th-price">Preis</th>
+        <th id="th-district">Stadtteil</th>
+        {'<th id="th-rating">Bewertung</th>' if has_ratings else ''}
       </tr>
     </thead>
     <tbody id="tbl"></tbody>
@@ -1068,38 +1142,6 @@ data.forEach(function(d, i) {{
     m.bindPopup(d.popup);
     markers.push(m);
 }});
-(function() {{
-  var panel = document.getElementById('top10-panel');
-  if (!panel) return;
-  var cheapHtml = '';
-  for (var _ci2 = 0; _ci2 < Math.min(10, data.length); _ci2++) {{
-    var d = data[_ci2];
-    cheapHtml += '<div class="top10-item" data-idx="' + _ci2 + '">'
-      + '<span class="t10-rank">' + (_ci2 + 1) + '</span>'
-      + '<span class="t10-name" title="' + d.name + '">' + d.name + '</span>'
-      + '<span class="t10-price">' + d.price_str + '</span></div>';
-  }}
-  var priceyHtml = '';
-  for (var _pi2 = 0; _pi2 < Math.min(10, data.length); _pi2++) {{
-    var _idx2 = data.length - 1 - _pi2;
-    var d2 = data[_idx2];
-    priceyHtml += '<div class="top10-item" data-idx="' + _idx2 + '">'
-      + '<span class="t10-rank">' + (_pi2 + 1) + '</span>'
-      + '<span class="t10-name" title="' + d2.name + '">' + d2.name + '</span>'
-      + '<span class="t10-price">' + d2.price_str + '</span></div>';
-  }}
-  panel.innerHTML = '<div class="top10-grid">'
-    + '<div class="top10-col cheap"><h4>💚 Top 10 Günstigste</h4>' + cheapHtml + '</div>'
-    + '<div class="top10-col pricey"><h4>🔴 Top 10 Teuerste</h4>' + priceyHtml + '</div>'
-    + '</div>';
-  panel.querySelectorAll('.top10-item').forEach(function(el) {{
-    el.addEventListener('click', function() {{
-      var idx = parseInt(this.dataset.idx);
-      markers[idx].openPopup();
-      map.panTo(markers[idx].getLatLng());
-    }});
-  }});
-}})();
 
 var tbody = document.getElementById('tbl');
 data.forEach(function(d, i) {{
@@ -1133,6 +1175,90 @@ var CITY_VIEWS_G = {city_views_json};
 var CITY_BOUNDS_G = {city_bounds_json};
 var activeCityKey = null;
 
+var i18n = {i18n_json};
+var currentLang = 'de';
+
+function renderTop10Panel() {{
+  var panel = document.getElementById('top10-panel');
+  if (!panel) return;
+  var t = i18n[currentLang];
+  var cheapHtml2 = '';
+  for (var _ci2 = 0; _ci2 < Math.min(10, data.length); _ci2++) {{
+    var _d = data[_ci2];
+    cheapHtml2 += '<div class="top10-item" data-idx="' + _ci2 + '">'
+      + '<span class="t10-rank">' + (_ci2 + 1) + '</span>'
+      + '<span class="t10-name" title="' + _d.name + '">' + _d.name + '</span>'
+      + '<span class="t10-price">' + _d.price_str + '</span></div>';
+  }}
+  var priceyHtml2 = '';
+  for (var _pi2 = 0; _pi2 < Math.min(10, data.length); _pi2++) {{
+    var _idx2 = data.length - 1 - _pi2;
+    var _d2 = data[_idx2];
+    priceyHtml2 += '<div class="top10-item" data-idx="' + _idx2 + '">'
+      + '<span class="t10-rank">' + (_pi2 + 1) + '</span>'
+      + '<span class="t10-name" title="' + _d2.name + '">' + _d2.name + '</span>'
+      + '<span class="t10-price">' + _d2.price_str + '</span></div>';
+  }}
+  panel.innerHTML = '<div class="top10-grid">'
+    + '<div class="top10-col cheap"><h4>' + t.top10Cheap + '</h4>' + cheapHtml2 + '</div>'
+    + '<div class="top10-col pricey"><h4>' + t.top10Pricey + '</h4>' + priceyHtml2 + '</div>'
+    + '</div>';
+  panel.querySelectorAll('.top10-item').forEach(function(el) {{
+    el.addEventListener('click', function() {{
+      var idx = parseInt(this.dataset.idx);
+      markers[idx].openPopup();
+      map.panTo(markers[idx].getLatLng());
+    }});
+  }});
+}}
+
+function renderStatsTable() {{
+  var el = document.getElementById('city-stats');
+  if (!el) return;
+  var t = i18n[currentLang];
+  var h = '<table class="stats-table"><thead><tr>'
+    + '<th>' + t.statsCity + '</th><th class="r">' + t.statsAvg + '</th>'
+    + '<th class="r">' + t.statsMedian + '</th><th class="r">' + t.statsMin + '</th>'
+    + '<th class="r">' + t.statsMax + '</th><th class="r">n</th>'
+    + '</tr></thead><tbody>';
+  cityStats.forEach(function(s) {{
+    h += '<tr data-key="' + s.key + '" onclick="filterAndGo(this.dataset.key)" title="Nur ' + s.name + ' anzeigen">'
+      + '<td>' + s.name + '</td>'
+      + '<td class="r fw">' + s.avg.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.median.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.min.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.max.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.count + '</td></tr>';
+  }});
+  h += '</tbody></table>';
+  el.innerHTML = h;
+}}
+
+function setLang(lang) {{
+  if (!i18n[lang]) return;
+  currentLang = lang;
+  try {{ localStorage.setItem('pizza-lang', lang); }} catch(e) {{}}
+  var t = i18n[lang];
+  document.querySelectorAll('.lang-btn').forEach(function(b) {{
+    b.classList.toggle('active', b.dataset.lang === lang);
+  }});
+  var _el;
+  _el = document.getElementById('intro-eyebrow'); if (_el) _el.textContent = t.eyebrow;
+  _el = document.getElementById('intro-desc');    if (_el) _el.textContent = t.desc;
+  _el = document.getElementById('intro-hint');    if (_el) _el.textContent = t.hint;
+  _el = document.getElementById('city-input');    if (_el) _el.placeholder = t.placeholder;
+  _el = document.getElementById('browse-btn');    if (_el) _el.textContent = t.browse;
+  _el = document.getElementById('count-suffix');  if (_el) _el.textContent = t.countSuffix;
+  _el = document.getElementById('stats-btn');     if (_el) _el.textContent = t.btnStats;
+  _el = document.getElementById('top10-btn');     if (_el) _el.textContent = t.btnTop10;
+  _el = document.getElementById('th-restaurant'); if (_el) _el.textContent = t.thRestaurant;
+  _el = document.getElementById('th-price');      if (_el) _el.textContent = t.thPrice;
+  _el = document.getElementById('th-district');   if (_el) _el.textContent = t.thDistrict;
+  _el = document.getElementById('th-rating');     if (_el) _el.textContent = t.thRating;
+  renderStatsTable();
+  renderTop10Panel();
+}}
+
 function updateSidebarFromBounds() {{
   var bounds = map.getBounds();
   var trs = document.getElementById('tbl').querySelectorAll('tr');
@@ -1155,34 +1281,32 @@ function filterCity(key) {{
 }}
 function toggleStats() {{
   var el = document.getElementById('city-stats');
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (!el) return;
+  var showing = el.style.display === 'none';
+  el.style.display = showing ? 'block' : 'none';
+  if (showing) renderStatsTable();
 }}
 function toggleTop10() {{
   var el = document.getElementById('top10-panel');
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (!el) return;
+  var showing = el.style.display === 'none';
+  el.style.display = showing ? 'block' : 'none';
+  if (showing) renderTop10Panel();
 }}
 function filterAndGo(key) {{
   activeCityKey = key || null;
   var b = CITY_BOUNDS_G[key];
   if (b) map.flyToBounds([[b[0], b[1]], [b[2], b[3]]], {{padding: [30, 30]}});
 }}
+document.querySelectorAll('.lang-btn').forEach(function(b) {{
+  b.addEventListener('click', function() {{ setLang(this.dataset.lang); }});
+}});
 (function() {{
-  var el = document.getElementById('city-stats');
-  if (!el) return;
-  var h = '<table class="stats-table"><thead><tr>'
-    + '<th>Stadt</th><th class="r">Ø Preis</th><th class="r">Median</th><th class="r">Min</th><th class="r">Max</th><th class="r">n</th>'
-    + '</tr></thead><tbody>';
-  cityStats.forEach(function(s) {{
-    h += '<tr data-key="' + s.key + '" onclick="filterAndGo(this.dataset.key)" title="Nur ' + s.name + ' anzeigen">'
-      + '<td>' + s.name + '</td>'
-      + '<td class="r fw">' + s.avg.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.median.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.min.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.max.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.count + '</td></tr>';
-  }});
-  h += '</tbody></table>';
-  el.innerHTML = h;
+  var saved = null;
+  try {{ saved = localStorage.getItem('pizza-lang'); }} catch(e) {{}}
+  var detected = saved || (navigator.language || '').slice(0,2).toLowerCase();
+  if (detected === 'nl') setLang('nl');
+  else if (detected === 'en') setLang('en');
 }})();
 {intro_js}
 </script>

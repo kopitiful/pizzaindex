@@ -53,6 +53,26 @@ td.rating { font-size: .8em; white-space: nowrap; }
   background: rgba(255,255,255,.12); color: #fff; cursor: pointer; vertical-align: middle;
 }
 #top10-btn:hover { background: rgba(255,255,255,.25); }
+.lang-sw { display: inline-flex; gap: 3px; margin-left: 8px; vertical-align: middle; }
+.lang-btn {
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  border-radius: 3px; color: rgba(255,255,255,.5); font-size: .65em;
+  padding: 1px 5px; cursor: pointer; transition: all .15s; font-family: inherit;
+}
+.lang-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
+.lang-btn.active { background: rgba(255,255,255,.28); color: #fff;
+  border-color: rgba(255,255,255,.55); font-weight: 700; }
+#lang-sw-intro {
+  position: absolute; top: 14px; right: 18px; display: flex; gap: 5px; z-index: 3;
+  pointer-events: auto;
+}
+#lang-sw-intro .lang-btn {
+  background: rgba(8,5,3,.5); border: 1px solid rgba(220,175,90,.25);
+  color: rgba(220,175,90,.45); font-size: .68em; padding: 2px 6px;
+}
+#lang-sw-intro .lang-btn:hover { color: rgba(220,175,90,.9); border-color: rgba(220,175,90,.6); }
+#lang-sw-intro .lang-btn.active { color: rgba(220,175,90,.95);
+  border-color: rgba(220,175,90,.7); font-weight: 700; }
 /* Custom map pins */
 .pin-cheap {
   background: #22a855; color: #fff; border-radius: 50% 50% 50% 0;
@@ -241,11 +261,16 @@ td.rating { font-size: .8em; white-space: nowrap; }
   </div>
   <div id="intro-stage">
     <div class="intro-panel" id="intro-panel">
-      <p class="intro-eyebrow">Preisvergleich</p>
+      <div id="lang-sw-intro">
+        <button class="lang-btn active" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <p class="intro-eyebrow" id="intro-eyebrow">Preisvergleich</p>
       <p class="intro-title">Pizza<br><em>Margherita</em></p>
-      <p class="intro-desc">Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.</p>
+      <p class="intro-desc" id="intro-desc">Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.</p>
       <div class="intro-ui">
-        <p class="intro-hint">Stadt eingeben</p>
+        <p class="intro-hint" id="intro-hint">Stadt eingeben</p>
         <div class="input-wrap">
           <input type="text" id="city-input" placeholder="Stadtname …"
                  autocomplete="off" spellcheck="false"/>
@@ -261,7 +286,7 @@ td.rating { font-size: .8em; white-space: nowrap; }
 <div id="sidebar">
   <div id="sidebar-header">
     <h2>🍕 Pizza Margherita — Alle Städte</h2>
-    <p><span id="sidebar-count">1969</span> Pizzerien · sortiert nach Preis <button id="stats-btn" onclick="toggleStats()">📊 Städtevergleich</button><button id="top10-btn" onclick="toggleTop10()">🏆 Top 10</button></p>
+    <p><span id="sidebar-count">1969</span> <span id="count-suffix">Pizzerien · sortiert nach Preis</span> <button id="stats-btn" onclick="toggleStats()">📊 Städtevergleich</button><button id="top10-btn" onclick="toggleTop10()">🏆 Top 10</button><span class="lang-sw"><button class="lang-btn active" data-lang="de">DE</button><button class="lang-btn" data-lang="en">EN</button><button class="lang-btn" data-lang="nl">NL</button></span></p>
   </div>
   <div id="city-stats" style="display:none"></div>
   <div id="top10-panel" style="display:none"></div>
@@ -269,10 +294,10 @@ td.rating { font-size: .8em; white-space: nowrap; }
     <thead>
       <tr>
         <th class="rank">#</th>
-        <th>Restaurant</th>
-        <th class="preis">Preis</th>
-        <th>Stadtteil</th>
-        <th>Bewertung</th>
+        <th id="th-restaurant">Restaurant</th>
+        <th class="preis" id="th-price">Preis</th>
+        <th id="th-district">Stadtteil</th>
+        <th id="th-rating">Bewertung</th>
       </tr>
     </thead>
     <tbody id="tbl"></tbody>
@@ -318,38 +343,6 @@ data.forEach(function(d, i) {
     m.bindPopup(d.popup);
     markers.push(m);
 });
-(function() {
-  var panel = document.getElementById('top10-panel');
-  if (!panel) return;
-  var cheapHtml = '';
-  for (var _ci2 = 0; _ci2 < Math.min(10, data.length); _ci2++) {
-    var d = data[_ci2];
-    cheapHtml += '<div class="top10-item" data-idx="' + _ci2 + '">'
-      + '<span class="t10-rank">' + (_ci2 + 1) + '</span>'
-      + '<span class="t10-name" title="' + d.name + '">' + d.name + '</span>'
-      + '<span class="t10-price">' + d.price_str + '</span></div>';
-  }
-  var priceyHtml = '';
-  for (var _pi2 = 0; _pi2 < Math.min(10, data.length); _pi2++) {
-    var _idx2 = data.length - 1 - _pi2;
-    var d2 = data[_idx2];
-    priceyHtml += '<div class="top10-item" data-idx="' + _idx2 + '">'
-      + '<span class="t10-rank">' + (_pi2 + 1) + '</span>'
-      + '<span class="t10-name" title="' + d2.name + '">' + d2.name + '</span>'
-      + '<span class="t10-price">' + d2.price_str + '</span></div>';
-  }
-  panel.innerHTML = '<div class="top10-grid">'
-    + '<div class="top10-col cheap"><h4>💚 Top 10 Günstigste</h4>' + cheapHtml + '</div>'
-    + '<div class="top10-col pricey"><h4>🔴 Top 10 Teuerste</h4>' + priceyHtml + '</div>'
-    + '</div>';
-  panel.querySelectorAll('.top10-item').forEach(function(el) {
-    el.addEventListener('click', function() {
-      var idx = parseInt(this.dataset.idx);
-      markers[idx].openPopup();
-      map.panTo(markers[idx].getLatLng());
-    });
-  });
-})();
 
 var tbody = document.getElementById('tbl');
 data.forEach(function(d, i) {
@@ -383,6 +376,90 @@ var CITY_VIEWS_G = {"duesseldorf": [51.24, 6.800000000000001], "berlin": [52.510
 var CITY_BOUNDS_G = {"duesseldorf": [51.1, 6.65, 51.38, 6.95], "berlin": [52.34, 13.09, 52.68, 13.76], "muenchen": [48.06, 11.36, 48.25, 11.72], "hamburg": [53.39, 9.73, 53.74, 10.33], "koeln": [50.83, 6.77, 51.08, 7.16], "den haag": [52.0, 4.15, 52.18, 4.45], "hannover": [52.3, 9.62, 52.44, 9.85], "bonn": [50.65, 7.02, 50.78, 7.18], "bremen": [53.02, 8.69, 53.19, 8.96], "stuttgart": [48.69, 9.1, 48.83, 9.29], "amsterdam": [52.28, 4.72, 52.43, 5.07], "rotterdam": [51.86, 4.36, 51.97, 4.6], "leipzig": [51.27, 12.27, 51.42, 12.52], "magdeburg": [52.05, 11.55, 52.2, 11.75], "haarlem": [52.35, 4.58, 52.42, 4.67], "frankfurt": [50.02, 8.47, 50.23, 8.8], "dortmund": [51.44, 7.34, 51.6, 7.63], "essen": [51.38, 6.9, 51.53, 7.12], "dresden": [51.0, 13.6, 51.18, 13.95], "nuernberg": [49.38, 10.97, 49.52, 11.17], "duisburg": [51.36, 6.68, 51.48, 6.87], "utrecht": [52.04, 5.04, 52.13, 5.18], "eindhoven": [51.39, 5.42, 51.5, 5.55], "groningen": [53.18, 6.52, 53.26, 6.64], "tilburg": [51.53, 5.02, 51.6, 5.17], "almere": [52.32, 5.16, 52.43, 5.34], "breda": [51.56, 4.74, 51.64, 4.88], "nijmegen": [51.82, 5.82, 51.88, 5.95], "apeldoorn": [52.17, 5.89, 52.25, 6.05], "enschede": [52.18, 6.83, 52.27, 6.96], "arnhem": [51.95, 5.85, 52.01, 5.98], "amersfoort": [52.13, 5.34, 52.2, 5.45], "zaanstad": [52.43, 4.78, 52.5, 4.89], "'s-hertogenbosch": [51.66, 5.25, 51.73, 5.36], "haarlemmermeer": [52.28, 4.58, 52.38, 4.8], "zwolle": [52.49, 6.05, 52.53, 6.15], "rostock": [54.06, 12.04, 54.13, 12.22], "kassel": [51.28, 9.44, 51.35, 9.54], "hagen": [51.34, 7.42, 51.41, 7.54], "potsdam": [52.36, 13.0, 52.44, 13.14], "hamm": [51.65, 7.77, 51.72, 7.89], "muelheim": [51.4, 6.85, 51.46, 6.94], "ludwigshafen": [49.46, 8.39, 49.51, 8.49], "oldenburg": [53.11, 8.17, 53.18, 8.28], "leverkusen": [51.01, 6.94, 51.07, 7.04], "darmstadt": [49.84, 8.6, 49.91, 8.71], "solingen": [51.14, 7.03, 51.21, 7.18], "heidelberg": [49.38, 8.65, 49.43, 8.74], "herne": [51.51, 7.18, 51.57, 7.3], "neuss": [51.17, 6.63, 51.24, 6.74], "regensburg": [48.99, 12.05, 49.05, 12.16], "pforzheim": [48.87, 8.66, 48.92, 8.74], "ingolstadt": [48.74, 11.39, 48.79, 11.46], "wuerzburg": [49.77, 9.91, 49.82, 9.98], "fuerth": [49.46, 10.97, 49.51, 11.03], "offenbach": [50.09, 8.75, 50.13, 8.81], "ulm": [48.38, 9.97, 48.42, 10.03], "goettingen": [51.52, 9.92, 51.56, 9.98], "paderborn": [51.71, 8.73, 51.74, 8.78], "recklinghausen": [51.6, 7.19, 51.64, 7.24], "bottrop": [51.52, 6.91, 51.56, 6.97], "bremerhaven": [53.54, 8.57, 53.58, 8.63], "reutlingen": [48.48, 9.2, 48.52, 9.26], "koblenz": [50.34, 7.55, 50.38, 7.62], "bergischgladbach": [50.98, 7.1, 51.03, 7.18], "erlangen": [49.57, 10.97, 49.62, 11.05], "trier": [49.74, 6.62, 49.77, 6.67], "jena": [50.91, 11.55, 50.95, 11.62], "siegen": [50.87, 7.99, 50.91, 8.05], "hildesheim": [52.14, 9.93, 52.17, 9.99], "kaiserslautern": [49.44, 7.74, 49.47, 7.8], "witten": [51.43, 7.32, 51.47, 7.38], "hanau": [50.12, 8.9, 50.16, 8.96], "esslingen": [48.73, 9.3, 48.76, 9.35], "ludwigsburg": [48.89, 9.18, 48.92, 9.23], "dueren": [50.79, 6.47, 50.82, 6.52], "iserlohn": [51.35, 7.65, 51.41, 7.76], "tuebingen": [48.5, 9.02, 48.54, 9.1], "flensburg": [54.77, 9.4, 54.82, 9.49], "zwickau": [50.7, 12.46, 50.75, 12.54], "ratingen": [51.27, 6.81, 51.33, 6.9], "giessen": [50.56, 8.63, 50.6, 8.71], "konstanz": [47.64, 9.14, 47.68, 9.22], "luenen": [51.6, 7.49, 51.64, 7.57], "worms": [49.61, 8.32, 49.65, 8.4], "velbert": [51.31, 7.0, 51.36, 7.09], "delmenhorst": [53.03, 8.59, 53.07, 8.67], "viersen": [51.24, 6.35, 51.28, 6.44], "aschaffenburg": [49.96, 9.11, 50.0, 9.19], "landshut": [48.52, 12.11, 48.56, 12.19], "gladbeck": [51.55, 6.95, 51.59, 7.04], "dorsten": [51.64, 6.93, 51.68, 7.02], "troisdorf": [50.79, 7.11, 50.83, 7.2], "arnsberg": [51.38, 8.03, 51.42, 8.12], "rheine": [52.26, 7.4, 52.3, 7.49], "lueneburg": [53.23, 10.37, 53.27, 10.45], "lippstadt": [51.65, 8.3, 51.69, 8.39], "herford": [52.09, 8.63, 52.13, 8.71], "plauen": [50.48, 12.1, 50.52, 12.18], "sindelfingen": [48.67, 8.95, 48.75, 9.1], "herten": [51.55, 7.08, 51.64, 7.23], "fulda": [50.53, 9.65, 50.58, 9.73], "dormagen": [51.07, 6.8, 51.12, 6.89], "passau": [48.55, 13.42, 48.59, 13.5], "freising": [48.37, 11.7, 48.44, 11.82], "bamberg": [49.85, 10.85, 49.93, 10.98], "straubing": [48.84, 12.52, 48.92, 12.65], "kempten": [47.7, 10.28, 47.74, 10.36], "ansbach": [49.27, 10.55, 49.32, 10.63], "rosenheim": [47.84, 12.1, 47.88, 12.18], "bayreuth": [49.93, 11.55, 49.97, 11.63]};
 var activeCityKey = null;
 
+var i18n = {"de": {"eyebrow": "Preisvergleich", "desc": "Was kostet eine Margherita in deiner Stadt? Echte Preise, direkt von den Speisekarten.", "hint": "Stadt eingeben", "placeholder": "Stadtname …", "browse": "Alle Städte anzeigen", "error": "× Unbekannte Stadt – versuch es noch mal", "countSuffix": "Pizzerien · sortiert nach Preis", "btnStats": "📊 Städtevergleich", "btnTop10": "🏆 Top 10", "thRestaurant": "Restaurant", "thPrice": "Preis", "thDistrict": "Stadtteil", "thRating": "Bewertung", "statsCity": "Stadt", "statsAvg": "Ø Preis", "statsMedian": "Median", "statsMin": "Min", "statsMax": "Max", "top10Cheap": "💚 Top 10 Günstigste", "top10Pricey": "🔴 Top 10 Teuerste"}, "en": {"eyebrow": "Price comparison", "desc": "What does a Margherita cost in your city? Real prices, straight from the menus.", "hint": "Enter a city", "placeholder": "City name …", "browse": "Browse all cities", "error": "× Unknown city – try again", "countSuffix": "pizzerias · sorted by price", "btnStats": "📊 City comparison", "btnTop10": "🏆 Top 10", "thRestaurant": "Restaurant", "thPrice": "Price", "thDistrict": "District", "thRating": "Rating", "statsCity": "City", "statsAvg": "Avg price", "statsMedian": "Median", "statsMin": "Min", "statsMax": "Max", "top10Cheap": "💚 Top 10 Cheapest", "top10Pricey": "🔴 Top 10 Most Expensive"}, "nl": {"eyebrow": "Prijsvergelijking", "desc": "Wat kost een Margherita in jouw stad? Echte prijzen, rechtstreeks van de menukaarten.", "hint": "Stad invoeren", "placeholder": "Stadsnaam …", "browse": "Alle steden bekijken", "error": "× Onbekende stad – probeer opnieuw", "countSuffix": "pizzeria’s · gesorteerd op prijs", "btnStats": "📊 Stadsoverzicht", "btnTop10": "🏆 Top 10", "thRestaurant": "Restaurant", "thPrice": "Prijs", "thDistrict": "Wijk", "thRating": "Beoordeling", "statsCity": "Stad", "statsAvg": "Gem. prijs", "statsMedian": "Mediaan", "statsMin": "Min", "statsMax": "Max", "top10Cheap": "💚 Top 10 Goedkoopste", "top10Pricey": "🔴 Top 10 Duurste"}};
+var currentLang = 'de';
+
+function renderTop10Panel() {
+  var panel = document.getElementById('top10-panel');
+  if (!panel) return;
+  var t = i18n[currentLang];
+  var cheapHtml2 = '';
+  for (var _ci2 = 0; _ci2 < Math.min(10, data.length); _ci2++) {
+    var _d = data[_ci2];
+    cheapHtml2 += '<div class="top10-item" data-idx="' + _ci2 + '">'
+      + '<span class="t10-rank">' + (_ci2 + 1) + '</span>'
+      + '<span class="t10-name" title="' + _d.name + '">' + _d.name + '</span>'
+      + '<span class="t10-price">' + _d.price_str + '</span></div>';
+  }
+  var priceyHtml2 = '';
+  for (var _pi2 = 0; _pi2 < Math.min(10, data.length); _pi2++) {
+    var _idx2 = data.length - 1 - _pi2;
+    var _d2 = data[_idx2];
+    priceyHtml2 += '<div class="top10-item" data-idx="' + _idx2 + '">'
+      + '<span class="t10-rank">' + (_pi2 + 1) + '</span>'
+      + '<span class="t10-name" title="' + _d2.name + '">' + _d2.name + '</span>'
+      + '<span class="t10-price">' + _d2.price_str + '</span></div>';
+  }
+  panel.innerHTML = '<div class="top10-grid">'
+    + '<div class="top10-col cheap"><h4>' + t.top10Cheap + '</h4>' + cheapHtml2 + '</div>'
+    + '<div class="top10-col pricey"><h4>' + t.top10Pricey + '</h4>' + priceyHtml2 + '</div>'
+    + '</div>';
+  panel.querySelectorAll('.top10-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var idx = parseInt(this.dataset.idx);
+      markers[idx].openPopup();
+      map.panTo(markers[idx].getLatLng());
+    });
+  });
+}
+
+function renderStatsTable() {
+  var el = document.getElementById('city-stats');
+  if (!el) return;
+  var t = i18n[currentLang];
+  var h = '<table class="stats-table"><thead><tr>'
+    + '<th>' + t.statsCity + '</th><th class="r">' + t.statsAvg + '</th>'
+    + '<th class="r">' + t.statsMedian + '</th><th class="r">' + t.statsMin + '</th>'
+    + '<th class="r">' + t.statsMax + '</th><th class="r">n</th>'
+    + '</tr></thead><tbody>';
+  cityStats.forEach(function(s) {
+    h += '<tr data-key="' + s.key + '" onclick="filterAndGo(this.dataset.key)" title="Nur ' + s.name + ' anzeigen">'
+      + '<td>' + s.name + '</td>'
+      + '<td class="r fw">' + s.avg.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.median.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.min.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.max.toFixed(2) + ' €</td>'
+      + '<td class="r">' + s.count + '</td></tr>';
+  });
+  h += '</tbody></table>';
+  el.innerHTML = h;
+}
+
+function setLang(lang) {
+  if (!i18n[lang]) return;
+  currentLang = lang;
+  try { localStorage.setItem('pizza-lang', lang); } catch(e) {}
+  var t = i18n[lang];
+  document.querySelectorAll('.lang-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  var _el;
+  _el = document.getElementById('intro-eyebrow'); if (_el) _el.textContent = t.eyebrow;
+  _el = document.getElementById('intro-desc');    if (_el) _el.textContent = t.desc;
+  _el = document.getElementById('intro-hint');    if (_el) _el.textContent = t.hint;
+  _el = document.getElementById('city-input');    if (_el) _el.placeholder = t.placeholder;
+  _el = document.getElementById('browse-btn');    if (_el) _el.textContent = t.browse;
+  _el = document.getElementById('count-suffix');  if (_el) _el.textContent = t.countSuffix;
+  _el = document.getElementById('stats-btn');     if (_el) _el.textContent = t.btnStats;
+  _el = document.getElementById('top10-btn');     if (_el) _el.textContent = t.btnTop10;
+  _el = document.getElementById('th-restaurant'); if (_el) _el.textContent = t.thRestaurant;
+  _el = document.getElementById('th-price');      if (_el) _el.textContent = t.thPrice;
+  _el = document.getElementById('th-district');   if (_el) _el.textContent = t.thDistrict;
+  _el = document.getElementById('th-rating');     if (_el) _el.textContent = t.thRating;
+  renderStatsTable();
+  renderTop10Panel();
+}
+
 function updateSidebarFromBounds() {
   var bounds = map.getBounds();
   var trs = document.getElementById('tbl').querySelectorAll('tr');
@@ -405,34 +482,32 @@ function filterCity(key) {
 }
 function toggleStats() {
   var el = document.getElementById('city-stats');
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (!el) return;
+  var showing = el.style.display === 'none';
+  el.style.display = showing ? 'block' : 'none';
+  if (showing) renderStatsTable();
 }
 function toggleTop10() {
   var el = document.getElementById('top10-panel');
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (!el) return;
+  var showing = el.style.display === 'none';
+  el.style.display = showing ? 'block' : 'none';
+  if (showing) renderTop10Panel();
 }
 function filterAndGo(key) {
   activeCityKey = key || null;
   var b = CITY_BOUNDS_G[key];
   if (b) map.flyToBounds([[b[0], b[1]], [b[2], b[3]]], {padding: [30, 30]});
 }
+document.querySelectorAll('.lang-btn').forEach(function(b) {
+  b.addEventListener('click', function() { setLang(this.dataset.lang); });
+});
 (function() {
-  var el = document.getElementById('city-stats');
-  if (!el) return;
-  var h = '<table class="stats-table"><thead><tr>'
-    + '<th>Stadt</th><th class="r">Ø Preis</th><th class="r">Median</th><th class="r">Min</th><th class="r">Max</th><th class="r">n</th>'
-    + '</tr></thead><tbody>';
-  cityStats.forEach(function(s) {
-    h += '<tr data-key="' + s.key + '" onclick="filterAndGo(this.dataset.key)" title="Nur ' + s.name + ' anzeigen">'
-      + '<td>' + s.name + '</td>'
-      + '<td class="r fw">' + s.avg.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.median.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.min.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.max.toFixed(2) + ' €</td>'
-      + '<td class="r">' + s.count + '</td></tr>';
-  });
-  h += '</tbody></table>';
-  el.innerHTML = h;
+  var saved = null;
+  try { saved = localStorage.getItem('pizza-lang'); } catch(e) {}
+  var detected = saved || (navigator.language || '').slice(0,2).toLowerCase();
+  if (detected === 'nl') setLang('nl');
+  else if (detected === 'en') setLang('en');
 })();
 
 (function() {
@@ -489,7 +564,7 @@ function filterAndGo(key) {
       error.textContent = '';
       doFly(singleCity ? norm(singleCity) : key);
     } else {
-      error.textContent = '× Unbekannte Stadt – versuch es noch mal';
+      error.textContent = i18n[currentLang].error;
       input.select();
     }
   });
