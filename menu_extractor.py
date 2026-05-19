@@ -125,12 +125,24 @@ async def fetch_menu_text(
     url: str,
     client: httpx.AsyncClient,
 ) -> Optional[MenuText]:
+    resp = None
     try:
         resp = await client.get(url, follow_redirects=True, timeout=config.REQUEST_TIMEOUT)
-        if resp.status_code >= 400:
-            return None
     except Exception as e:
         log.debug("fetch %s failed: %s", url, e)
+
+    # On 4xx/5xx or network failure, try Playwright before giving up
+    if resp is None or resp.status_code >= 400:
+        log.debug("HTTP %s for %s — trying Playwright fallback",
+                  resp.status_code if resp is not None else "error", url)
+        try:
+            pw_text, images = await _playwright_fetch(url)
+            if images:
+                return MenuText(text=pw_text, method="playwright_images", images=images)
+            if pw_text:
+                return MenuText(text=pw_text, method="playwright")
+        except Exception as e:
+            log.debug("Playwright fallback failed for %s: %s", url, e)
         return None
 
     content_type = resp.headers.get("content-type", "")
