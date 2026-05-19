@@ -198,6 +198,53 @@ CITY_BBOXES: dict[str, list[tuple[str, str]]] = {
     "aalen":               [("Aalen",               "48.82,10.08,48.86,10.13")],
     "rüsselsheim am main": [("Rüsselsheim am Main", "49.99,8.38,50.02,8.43")],
     "neuwied":             [("Neuwied",             "50.42,7.45,50.46,7.52")],
+    # ── neue Städterunde ────────────────────────────────────────────────────
+    "grevenbroich":        [("Grevenbroich",        "51.08,6.56,51.14,6.66")],
+    "lüdenscheid":         [("Lüdenscheid",         "51.20,7.60,51.26,7.70")],
+    "friedrichshafen":     [("Friedrichshafen",     "47.63,9.44,47.69,9.52")],
+    "bergheim":            [("Bergheim",            "50.94,6.59,50.99,6.67")],
+    "schwäbisch gmünd":    [("Schwäbisch Gmünd",    "48.78,9.77,48.82,9.85")],
+    "wesel":               [("Wesel",               "51.64,6.59,51.68,6.67")],
+    "offenburg":           [("Offenburg",           "48.46,7.93,48.50,7.99")],
+    "hürth":               [("Hürth",               "50.86,6.84,50.91,6.93")],
+    "unna":                [("Unna",                "51.52,7.68,51.57,7.76")],
+    "langenfeld (rheinland)":[("Langenfeld (Rheinland)","51.10,6.93,51.14,7.00")],
+    "göppingen":           [("Göppingen",           "48.69,9.64,48.73,9.72")],
+    "euskirchen":          [("Euskirchen",          "50.64,6.77,50.69,6.84")],
+    "stolberg (rheinland)":[("Stolberg (Rheinland)","50.76,6.20,50.81,6.28")],
+    "eschweiler":          [("Eschweiler",          "50.81,6.25,50.86,6.32")],
+    "meerbusch":           [("Meerbusch",           "51.24,6.66,51.29,6.76")],
+    "waiblingen":          [("Waiblingen",          "48.82,9.31,48.86,9.39")],
+    "sankt augustin":      [("Sankt Augustin",      "50.77,7.16,50.82,7.24")],
+    "hilden":              [("Hilden",              "51.16,6.92,51.20,6.99")],
+    "baden-baden":         [("Baden-Baden",         "48.74,8.21,48.79,8.29")],
+    "hattingen":           [("Hattingen",           "51.39,7.16,51.44,7.24")],
+    "pulheim":             [("Pulheim",             "51.00,6.77,51.05,6.85")],
+    "bad homburg v. d. höhe":[("Bad Homburg v. d. Höhe","50.22,8.59,50.26,8.66")],
+    "wetzlar":             [("Wetzlar",             "50.55,8.47,50.59,8.55")],
+    "ahlen":               [("Ahlen",               "51.75,7.87,51.79,7.95")],
+    "ibbenbüren":          [("Ibbenbüren",          "52.27,7.71,52.31,7.79")],
+    "kleve":               [("Kleve",               "51.78,6.12,51.82,6.21")],
+    "frechen":             [("Frechen",             "50.90,6.80,50.94,6.88")],
+    "bad kreuznach":       [("Bad Kreuznach",       "49.84,7.84,49.88,7.92")],
+    "gummersbach":         [("Gummersbach",         "51.02,7.55,51.06,7.62")],
+    "ravensburg":          [("Ravensburg",          "47.77,9.59,47.81,9.67")],
+    "böblingen":           [("Böblingen",           "48.67,8.99,48.72,9.06")],
+    "speyer":              [("Speyer",              "49.30,8.42,49.35,8.49")],
+    "erftstadt":           [("Erftstadt",           "50.80,6.73,50.85,6.82")],
+    "willich":             [("Willich",             "51.25,6.53,51.29,6.61")],
+    "frankenthal (pfalz)": [("Frankenthal (Pfalz)", "49.52,8.34,49.56,8.41")],
+    "heidenheim an der brenz":[("Heidenheim an der Brenz","48.67,10.14,48.72,10.22")],
+    "lörrach":             [("Lörrach",             "47.60,7.65,47.64,7.73")],
+    "landau in der pfalz": [("Landau in der Pfalz", "49.19,8.09,49.23,8.17")],
+    "singen (hohentwiel)": [("Singen (Hohentwiel)", "47.75,8.82,47.79,8.90")],
+    "bornheim":            [("Bornheim",            "50.76,6.97,50.80,7.05")],
+    "schwerte":            [("Schwerte",            "51.44,7.54,51.48,7.62")],
+    "neunkirchen":         [("Neunkirchen",         "49.34,7.16,49.38,7.24")],
+    "homburg":             [("Homburg",             "49.31,7.33,49.36,7.41")],
+    "pirmasens":           [("Pirmasens",           "49.19,7.59,49.23,7.67")],
+    "saarlouis":           [("Saarlouis",           "49.31,6.73,49.35,6.81")],
+    "zweibrücken":         [("Zweibrücken",         "49.24,7.35,49.28,7.43")],
 }
 
 
@@ -262,25 +309,31 @@ async def _query_region(
     client: httpx.AsyncClient,
     name: str,
     bbox: str,
+    retries: int = 3,
+    retry_sleep: int = 30,
 ) -> list[dict]:
     query = _make_query(bbox)
-    for url in _MIRRORS:
-        try:
-            resp = await client.post(
-                url,
-                data={"data": query},
-                headers={
-                    "User-Agent": config.USER_AGENT,
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-            )
-            resp.raise_for_status()
-            elements = resp.json().get("elements", [])
-            log.info("Region %s: %d elements (via %s)", name, len(elements), url)
-            return elements
-        except Exception as e:
-            log.warning("Region %s / %s failed: %s", name, url, e)
-    log.error("Region %s: all mirrors failed", name)
+    for attempt in range(retries):
+        for url in _MIRRORS:
+            try:
+                resp = await client.post(
+                    url,
+                    data={"data": query},
+                    headers={
+                        "User-Agent": config.USER_AGENT,
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                )
+                resp.raise_for_status()
+                elements = resp.json().get("elements", [])
+                log.info("Region %s: %d elements (via %s)", name, len(elements), url)
+                return elements
+            except Exception as e:
+                log.warning("Region %s / %s failed: %s", name, url, e)
+        if attempt < retries - 1:
+            log.warning("Region %s: all mirrors failed, retrying in %ds…", name, retry_sleep)
+            await asyncio.sleep(retry_sleep)
+    log.error("Region %s: all mirrors failed after %d attempts", name, retries)
     return []
 
 
@@ -291,7 +344,9 @@ async def fetch_from_osm(regions: list[tuple[str, str]] | None = None) -> list[d
     all_elements: list[dict] = []
 
     async with httpx.AsyncClient(timeout=150) as client:
-        for name, bbox in regions:
+        for i, (name, bbox) in enumerate(regions):
+            if i > 0:
+                await asyncio.sleep(5)
             elements = await _query_region(client, name, bbox)
             all_elements.extend(elements)
 
