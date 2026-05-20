@@ -580,14 +580,15 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
         else:
             address_html = street_line or city_line
         label = r.get("size_label") or (f"{r['size_cm']} cm" if r.get("size_cm") else "")
-        price_str = f"{r['price']:.2f} €" + (f" ({label})" if label else "")
+        price_str = f"{r['price']:.2f} €"
         rating = r.get("google_rating")
         review_count = r.get("google_review_count")
         rating_str = f"⭐ {rating:.1f} ({review_count} Bew.)" if rating else ""
         bstatus = r.get("business_status") or ""
         status_icon = {"OPERATIONAL": "🟢", "CLOSED_TEMPORARILY": "🟡",
                        "CLOSED_PERMANENTLY": "🔴"}.get(bstatus, "")
-        popup = f"<b>{r['name']}</b><br>{address_html}<br>Margherita: {price_str}"
+        size_cm = r.get("size_cm")
+        popup = f"<b>{r['name']}</b><br>{address_html}<br>Margherita: {price_str}" + (f" · {size_cm} cm" if size_cm else "")
         if rating_str:
             popup += f"<br>{rating_str}"
         if status_icon:
@@ -610,6 +611,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
             "website": r.get("website") or "",
             "price": r["price"],
             "price_str": price_str,
+            "size_cm": r.get("size_cm") or 0,
             "ort": _stadtteil(r),
             "typ": _classify_type(r),
             "rating": rating,
@@ -999,6 +1001,7 @@ td.name a {{ color: #222; text-decoration: none; font-weight: 500; }}
 td.name a:hover {{ text-decoration: underline; color: #400b1b; }}
 td.name .typ {{ display: block; font-size: .72em; color: #888; margin-top: 1px; }}
 td.preis {{ font-weight: 700; color: #400b1b; white-space: nowrap; }}
+.size-badge {{ font-size: .68em; font-weight: 400; color: #888; background: #f0f0f0; border-radius: 3px; padding: 1px 4px; margin-left: 4px; vertical-align: middle; }}
 td.ort {{ color: #555; font-size: .8em; }}
 td.rating {{ font-size: .8em; white-space: nowrap; }}
 #city-stats {{ border-bottom: 2px solid #e8d5b0; background: #fff8f0; }}
@@ -1157,7 +1160,7 @@ data.forEach(function(d, i) {{
     tr.innerHTML =
         '<td class="rank">' + (i + 1) + '</td>' +
         '<td class="name">' + nameCell + statusBadge + '</td>' +
-        '<td class="preis">' + d.price_str + '</td>' +
+        '<td class="preis">' + d.price_str + (d.size_cm ? '<span class="size-badge">' + d.size_cm + ' cm</span>' : '') + '</td>' +
         '<td class="ort">' + d.ort + '</td>' +
         ratingCell;
     tr.addEventListener('mouseenter', function() {{
