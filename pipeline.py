@@ -603,6 +603,13 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
             if _s2 <= r["lat"] <= _n2 and _w2 <= r["lon"] <= _e2:
                 _city_key = _norm_city(_cn2)
                 break
+        _NL_KEYS = {_norm_city(k) for k in [
+            "den haag", "amsterdam", "rotterdam", "haarlem", "utrecht",
+            "eindhoven", "groningen", "tilburg", "almere", "breda",
+            "nijmegen", "apeldoorn", "enschede", "arnhem", "amersfoort",
+            "zaanstad", "'s-hertogenbosch", "haarlemmermeer", "zwolle",
+        ]}
+        _country = "NL" if _city_key in _NL_KEYS else ("DE" if _city_key else "")
         data.append({
             "lat": r["lat"],
             "lon": r["lon"],
@@ -618,6 +625,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
             "rating_str": rating_str,
             "city_key": _city_key,
             "status_icon": status_icon,
+            "country": _country,
         })
 
     center_lat = sum(d["lat"] for d in data) / len(data)
@@ -653,6 +661,24 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
     ], key=lambda x: x["avg"])
     city_stats_json = json.dumps(city_stats, ensure_ascii=False)
 
+    # Germany-only aggregate
+    _de_prices = [d["price"] for d in data if d.get("country") == "DE"]
+    germany_stats = None
+    if _de_prices:
+        germany_stats = {
+            "avg": sum(_de_prices) / len(_de_prices),
+            "median": statistics.median(_de_prices),
+            "min": min(_de_prices),
+            "max": max(_de_prices),
+            "count": len(_de_prices),
+        }
+    germany_stats_json = json.dumps(germany_stats, ensure_ascii=False)
+
+    # Indices (in sorted-by-price data[]) of the 10 most expensive German pizzerias
+    _de_indexed = [(i, d) for i, d in enumerate(data) if d.get("country") == "DE"]
+    _de_top10_idx = [i for i, _ in sorted(_de_indexed, key=lambda x: x[1]["price"], reverse=True)[:10]]
+    de_top10_pricey_json = json.dumps(_de_top10_idx)
+
     _cheapest = min(data, key=lambda d: d["price"])
     _priciest = max(data, key=lambda d: d["price"])
     _cheapest_city = next(
@@ -683,6 +709,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
             "statsMin": "Min", "statsMax": "Max",
             "top10Cheap": "\U0001f49a Top 10 Günstigste",
             "top10Pricey": "\U0001f534 Top 10 Teuerste",
+            "statsDeRow": "\U0001f1e9\U0001f1ea Deutschland gesamt",
         },
         "en": {
             "eyebrow": "Price comparison",
@@ -698,6 +725,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
             "statsMin": "Min", "statsMax": "Max",
             "top10Cheap": "\U0001f49a Top 10 Cheapest",
             "top10Pricey": "\U0001f534 Top 10 Most Expensive",
+            "statsDeRow": "\U0001f1e9\U0001f1ea Germany (all)",
         },
         "nl": {
             "eyebrow": "Prijsvergelijking",
@@ -713,6 +741,7 @@ def export_map(city: Optional[str] = None, output: str = "pizza_map.html"):
             "statsMin": "Min", "statsMax": "Max",
             "top10Cheap": "\U0001f49a Top 10 Goedkoopste",
             "top10Pricey": "\U0001f534 Top 10 Duurste",
+            "statsDeRow": "\U0001f1e9\U0001f1ea Duitsland (totaal)",
         },
     }
     i18n_json = json.dumps(_i18n, ensure_ascii=False)
@@ -995,6 +1024,8 @@ thead th {{
 th.preis, td.preis {{ text-align: right; }}
 tbody tr {{ border-bottom: 1px solid #eee; cursor: pointer; transition: background .1s; }}
 tbody tr:hover, tbody tr.active {{ background: #fff3cd; }}
+tbody tr.de-top-pricey {{ background: #fff3e0; }}
+tbody tr.de-top-pricey:hover, tbody tr.de-top-pricey.active {{ background: #ffe0b2; }}
 td {{ padding: 5px 8px; vertical-align: middle; }}
 td.rank {{ color: #999; font-size: .75em; width: 22px; }}
 td.name a {{ color: #222; text-decoration: none; font-weight: 500; }}
@@ -1013,6 +1044,8 @@ td.rating {{ font-size: .8em; white-space: nowrap; }}
 .stats-table td {{ padding: 5px 8px; }}
 .stats-table td.r {{ text-align: right; }}
 .stats-table td.fw {{ font-weight: 700; color: #400b1b; }}
+.stats-table tr.stats-row-de {{ background: #e8f0fe; }}
+.stats-table tr.stats-row-de td {{ font-weight: 700; border-top: 2px solid #1a56db; border-bottom: 2px solid #1a56db; }}
 #stats-btn {{
   font-size: .72em; margin-left: 8px; padding: 2px 7px;
   border: 1px solid rgba(255,255,255,.35); border-radius: 4px;
@@ -1149,6 +1182,7 @@ data.forEach(function(d, i) {{
 var tbody = document.getElementById('tbl');
 data.forEach(function(d, i) {{
     var tr = document.createElement('tr');
+    if (deTop10PriceySet.has(i)) tr.classList.add('de-top-pricey');
     var nameCell = d.website
         ? '<a href="' + d.website + '" target="_blank" onclick="event.stopPropagation()">' + d.name + '</a>'
         : d.name;
@@ -1174,6 +1208,8 @@ data.forEach(function(d, i) {{
 }});
 
 var cityStats = {city_stats_json};
+var germanyStats = {germany_stats_json};
+var deTop10PriceySet = new Set({de_top10_pricey_json});
 var CITY_VIEWS_G = {city_views_json};
 var CITY_BOUNDS_G = {city_bounds_json};
 var activeCityKey = null;
@@ -1224,6 +1260,15 @@ function renderStatsTable() {{
     + '<th class="r">' + t.statsMedian + '</th><th class="r">' + t.statsMin + '</th>'
     + '<th class="r">' + t.statsMax + '</th><th class="r">n</th>'
     + '</tr></thead><tbody>';
+  if (germanyStats) {{
+    h += '<tr class="stats-row-de">'
+      + '<td>' + t.statsDeRow + '</td>'
+      + '<td class="r">' + germanyStats.avg.toFixed(2) + ' €</td>'
+      + '<td class="r">' + germanyStats.median.toFixed(2) + ' €</td>'
+      + '<td class="r">' + germanyStats.min.toFixed(2) + ' €</td>'
+      + '<td class="r">' + germanyStats.max.toFixed(2) + ' €</td>'
+      + '<td class="r">' + germanyStats.count + '</td></tr>';
+  }}
   cityStats.forEach(function(s) {{
     h += '<tr data-key="' + s.key + '" onclick="filterAndGo(this.dataset.key)" title="Nur ' + s.name + ' anzeigen">'
       + '<td>' + s.name + '</td>'
