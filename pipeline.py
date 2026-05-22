@@ -1179,6 +1179,13 @@ data.forEach(function(d, i) {{
     markers.push(m);
 }});
 
+var cityStats = {city_stats_json};
+var germanyStats = {germany_stats_json};
+var deTop10PriceySet = new Set({de_top10_pricey_json});
+var CITY_VIEWS_G = {city_views_json};
+var CITY_BOUNDS_G = {city_bounds_json};
+var activeCityKey = null;
+
 var tbody = document.getElementById('tbl');
 data.forEach(function(d, i) {{
     var tr = document.createElement('tr');
@@ -1206,13 +1213,6 @@ data.forEach(function(d, i) {{
     }});
     tbody.appendChild(tr);
 }});
-
-var cityStats = {city_stats_json};
-var germanyStats = {germany_stats_json};
-var deTop10PriceySet = new Set({de_top10_pricey_json});
-var CITY_VIEWS_G = {city_views_json};
-var CITY_BOUNDS_G = {city_bounds_json};
-var activeCityKey = null;
 
 var i18n = {i18n_json};
 var currentLang = 'de';
